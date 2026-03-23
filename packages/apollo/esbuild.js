@@ -22,8 +22,6 @@ const process = require('process');
 
 const svgrPlugin = require('esbuild-plugin-svgr');
 const sassPlugin = require('esbuild-sass-plugin');
-const node_stdlib_browser_plugin = require('node-stdlib-browser/helpers/esbuild/plugin');
-const stdLibBrowser = require('node-stdlib-browser');
 
 // set file names
 const fileNameBase = 'apollo.' + Date.now();
@@ -58,20 +56,26 @@ require('esbuild').build({
 		'.js': 'jsx'
 	},
 	define: {
-		global: 'global',
-		process: 'process',
-		Buffer: 'Buffer'
+		global: 'globalThis',
+		'process.env.NODE_ENV': '"production"'
+	},
+	alias: {
+		// Map Node.js built-in modules to browser-compatible polyfills
+		'zlib': require.resolve('browserify-zlib'),
+		'buffer': require.resolve('buffer/'),
+		'url': require.resolve('url/'),
+		'stream': require.resolve('stream-browserify'),
+		'util': require.resolve('util/'),
+		'assert': require.resolve('assert/'),
+		'events': require.resolve('events/'),
 	},
 	plugins: [
 		sassPlugin.sassPlugin({ quietDeps: true }),
 		svgrPlugin(),
-		node_stdlib_browser_plugin(stdLibBrowser),
 	],
 	external: [],			// don't use external, it is not intended for a bundled app in a browser
 	inject: [
-		require.resolve('node-stdlib-browser/helpers/esbuild/shim'),
-		//'./buffer-shim.js',
-		//'./process-shim.js',
+		require.resolve('buffer/'),
 	],
 	platform: 'browser',
 	bundle: true,
